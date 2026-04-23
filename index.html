@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Fábrica - Latas Enlozadas | TMC</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="header-left">
+                <img src="logo_tmc.png" alt="TMC Logo" style="height: 36px; margin-right: 12px;">
+                <h1>Fábrica · Latas Enlozadas</h1>
+            </div>
+            <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
+                <div id="status-indicator" class="status-dot red" title="Desconectado"></div>
+            </div>
+        </header>
+
+        <!-- SINGLE VIEW: FÁBRICA -->
+        <div id="tab-fabrica" class="main-content active">
+            <!-- COL 0: ALTA DE PRODUCCIÓN -->
+            <div class="col" id="col-alta-produccion">
+                <div class="col-header">
+                    <span>🏗️ Alta de Producción</span>
+                </div>
+                <div class="col-body">
+                    <div style="padding: 0.5rem;">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Artículo</label>
+                            <div class="dropdown-wrapper">
+                                <input type="text" id="alta-sku-search" class="form-control"
+                                    placeholder="Buscar artículo..." onfocus="filterAltaArticles()"
+                                    oninput="filterAltaArticles()">
+                                <div id="alta-sku-results" class="search-results-dropdown" style="display:none;"></div>
+                                <input type="hidden" id="alta-mate-id">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" id="alta-qty" class="form-control" min="1" placeholder="0">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label">Observaciones (Opcional)</label>
+                            <input type="text" id="alta-obs" class="form-control" placeholder="...">
+                        </div>
+                        <button class="btn btn-primary w-100" style="margin-top: 1rem;" onclick="registrarProduccion()">
+                            ⚡ Registrar Producción
+                        </button>
+                    </div>
+
+                    <!-- Actividad Reciente -->
+                    <div style="margin-top: 2rem; padding: 0.5rem; border-top: 1px dashed var(--border-color);">
+                        <div class="flex-between" style="margin-bottom: 0.5rem; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">REGISTROS RECIENTES</h4>
+                            <button class="btn-icon" onclick="fetchAltasRecientes()" title="Actualizar Registros">🔄</button>
+                        </div>
+                        <div id="alta-recent-list" class="text-sm" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                            <p class="text-muted text-center italic">Cargando registros...</p>
+                        </div>
+                    </div>
+
+                    <!-- Pendientes de Procesar -->
+                    <div style="margin-top: 1rem; padding: 0.5rem; border-top: 1px dashed var(--border-color);">
+                        <div class="flex-between" style="margin-bottom: 0.5rem; align-items: center;">
+                            <h4 style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">PENDIENTES (HOY)</h4>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn btn-sm btn-outline" onclick="procesarAltasPendientes()" title="Procesar Remitos de Compra" style="font-size: 0.7rem; padding: 2px 6px;">🛠️ Procesar Todo</button>
+                                <button class="btn-icon" onclick="fetchAltasPendientes()" title="Actualizar Pendientes">🔄</button>
+                            </div>
+                        </div>
+                        <div id="alta-pendientes-list" class="text-sm" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                            <p class="text-muted text-center italic">Cargando pendientes...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COL 1: STOCK / JAULAS CERRADAS -->
+            <div class="col">
+                <div class="col-header">
+                    <span id="col-stock-title">🏭 Stock</span>
+                    <div style="display:flex; gap:0.25rem; align-items:center;">
+                        <button id="btn-fabrica" class="btn btn-sm btn-primary active"
+                            onclick="toggleStockView('FABRICA')">Fábrica</button>
+                        <button id="btn-revestimientos" class="btn btn-sm"
+                            onclick="toggleStockView('CERRADAS')">Jaulas Cerradas</button>
+                        <button class="btn-icon" onclick="refreshCurrentView()" title="Actualizar">🔄</button>
+                    </div>
+                </div>
+                <div style="padding: 0.5rem;">
+                    <input type="text" id="search-stock" class="form-control" placeholder="🔍 Buscar artículo..."
+                        oninput="filtrarStock()">
+                </div>
+                <div class="col-body" id="stock-list">
+                    <p class="text-muted text-center" style="padding:1rem;">Cargando stock...</p>
+                </div>
+            </div>
+
+            <!-- COL 2: JAULAS -->
+            <div class="col">
+                <div class="col-header">
+                    <span>📦 Jaulas</span>
+                    <div style="display:flex; gap:0.25rem; align-items:center;">
+                        <button class="btn btn-primary btn-sm" onclick="crearNuevoRemito()">+ Nueva</button>
+                        <button class="btn-icon" onclick="fetchActiveRemitos()" title="Actualizar Jaulas">🔄</button>
+                    </div>
+                </div>
+                <div class="col-body" id="remito-list">
+                    <!-- Remitos populated via JS -->
+                </div>
+            </div>
+
+            <!-- COL 3: DETALLE ACTIVO -->
+            <div class="col">
+                <div class="col-header">
+                    <span>📝 Detalle de Jaula</span>
+                    <div id="active-jaula-badge" class="badge-jaula" style="display:none;">Jaula N° ...</div>
+                    <div>
+                        <span id="active-remito-id" class="badge bg-blue" style="display:none;">#000</span>
+                    </div>
+                </div>
+
+                <div id="detail-panel" style="display:none; flex-direction:column; height:100%;">
+                    <div class="col-body" id="remito-items">
+                        <!-- Items added to Remito -->
+                    </div>
+
+                    <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: #f8fafc;">
+                        <div class="flex-between" style="margin-bottom: 0.5rem;">
+                            <strong>Total Items:</strong>
+                            <span id="total-items">0</span>
+                        </div>
+                        <div id="remito-actions">
+                            <button class="btn btn-success" style="width:100%;" onclick="guardarItemsEnYiqi()">💾
+                                Guardar Items en YiQi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="empty-state"
+                    style="flex:1; display:flex; justify-content:center; align-items:center; color:var(--text-muted);">
+                    <p>Selecciona o crea una jaula para ver detalles.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay">
+        <div style="text-align:center;">
+            <div style="font-size: 2rem;">⏳</div>
+            <p>Procesando...</p>
+        </div>
+    </div>
+
+    <!-- Custom Modal Structure -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-box">
+            <span id="modal-icon" class="modal-icon">✨</span>
+            <div id="modal-title" class="modal-title">Título</div>
+            <div id="modal-message" class="modal-message">Mensaje aquí</div>
+            <div id="modal-actions" class="modal-actions">
+                <!-- Buttons injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="app-footer">Esperando acciones...</div>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="logica.js"></script>
+</body>
+
+</html>
