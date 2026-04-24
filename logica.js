@@ -46,6 +46,29 @@ const YIQI_CONFIG = {
     smartieNroRemitoExterno: 2767  // Smartie ordenada por Nro Remito Externo DESC
 };
 
+/**
+ * NAVEGACIÓN ENTRE SOLAPAS (Mobile-First)
+ */
+function switchTab(tabId) {
+    console.log("🚀 Cambiando a solapa:", tabId);
+    
+    // Ocultar todas las solapas
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    // Desactivar todos los botones de nav
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    
+    // Mostrar solapa seleccionada
+    const targetPane = document.getElementById(`view-${tabId}`);
+    if (targetPane) targetPane.classList.add('active');
+    
+    // Activar botón de nav
+    const targetNav = document.getElementById(`nav-${tabId}`);
+    if (targetNav) targetNav.classList.add('active');
+
+    // Scroll al inicio de la vista
+    window.scrollTo(0, 0);
+}
+
 // --- STATE ---
 let stock = [];
 let remitos = [];
@@ -1268,11 +1291,24 @@ async function setActiveRemito(remito) {
     }
 
     const displayNum = (remito.nroComprobante && remito.nroComprobante !== "S/N" && remito.nroComprobante !== "undefined") ? remito.nroComprobante : `ID: ${remito.id}`;
-    document.getElementById('active-remito-id').innerText = displayNum;
-    document.getElementById('active-remito-id').style.display = 'block';
+    
+    // Actualizar el "Globito" de jaula activa en el header
+    const bubble = document.getElementById('active-cage-bubble');
+    if (bubble) {
+        bubble.innerText = `📦 #${displayNum}`;
+        bubble.style.display = 'block';
+    }
 
-    const badge = document.getElementById('active-jaula-badge');
-    if (badge) {
+    // SALTO AUTOMÁTICO A LLENADO
+    switchTab('llenado');
+
+    const detailPanel = document.getElementById('detail-panel');
+    if (detailPanel) detailPanel.style.display = 'block';
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.style.display = 'none';
+
+    renderRemitoItems();
+}
         badge.innerText = jaulaText;
         badge.style.display = 'block';
     }
@@ -1815,7 +1851,6 @@ async function registrarProduccion() {
     const mateId = document.getElementById('alta-mate-id').value;
     const sku = document.getElementById('alta-sku-search').value;
     const qty = document.getElementById('alta-qty').value;
-    const obs = document.getElementById('alta-obs').value;
 
     if (!mateId || !qty || qty <= 0) {
         await showModal("Datos Incompletos", "Por favor selecciona un artículo y especifica una cantidad válida.", "warning");
@@ -1838,7 +1873,7 @@ async function registrarProduccion() {
         const initialRemitos = await YiQi.fetch(2698, 787);
         const existingIds = (initialRemitos || []).map(r => String(r.ID || r.id));
 
-        const formStr = `12369=${enlozadasGroupId}&12370=${mateId}&12371=${qty}&12372=${encodeURIComponent(obs)}`;
+        const formStr = `12369=${enlozadasGroupId}&12370=${mateId}&12371=${qty}&12372=Fábrica`;
 
         const payload = {
             schemaId: YIQI_CONFIG.schemaId,
@@ -1868,7 +1903,6 @@ async function registrarProduccion() {
             document.getElementById('alta-mate-id').value = "";
             document.getElementById('alta-sku-search').value = "";
             document.getElementById('alta-qty').value = "";
-            document.getElementById('alta-obs').value = "";
 
             // PROCESAMIENTO AUTOMATICO del remito de compra
             let matchingRemitoId = null;

@@ -14,143 +14,104 @@
 <body>
 
     <div class="app-container">
-        <header>
+        <header class="compact-header">
             <div class="header-left">
-                <img src="logo_tmc.png" alt="TMC Logo" style="height: 36px; margin-right: 12px;">
-                <h1>Fábrica · Latas Enlozadas</h1>
+                <img src="logo_tmc.png" alt="TMC">
+                <h1>Fábrica · Loza</h1>
             </div>
-            <div class="header-right" style="display: flex; align-items: center; gap: 15px;">
-                <div id="status-indicator" class="status-dot red" title="Desconectado"></div>
+            <div id="active-cage-bubble" class="cage-bubble" onclick="switchTab('llenado')" style="display:none;">
+                📦 Jaula #...
             </div>
         </header>
 
-        <!-- SINGLE VIEW: FÁBRICA -->
-        <div id="tab-fabrica" class="main-content active">
-            <!-- COL 0: ALTA DE PRODUCCIÓN -->
-            <div class="col" id="col-alta-produccion">
-                <div class="col-header">
-                    <span>🏗️ Alta de Producción</span>
-                </div>
-                <div class="col-body">
-                    <div style="padding: 0.5rem;">
-                        <div class="form-group mb-3">
+        <main class="main-content">
+            <!-- TAB 1: FABRICA (Alta Producción) -->
+            <div id="view-fabrica" class="tab-pane active">
+                <div class="col">
+                    <div class="col-header"><span>🏗️ Alta Producción</span></div>
+                    <div class="col-body">
+                        <div class="form-group">
                             <label class="form-label">Artículo</label>
                             <div class="dropdown-wrapper">
-                                <input type="text" id="alta-sku-search" class="form-control"
-                                    placeholder="Buscar artículo..." onfocus="filterAltaArticles()"
-                                    oninput="filterAltaArticles()">
+                                <input type="text" id="alta-sku-search" class="form-control" placeholder="Buscar SKU..." onfocus="filterAltaArticles()" oninput="filterAltaArticles()">
                                 <div id="alta-sku-results" class="search-results-dropdown" style="display:none;"></div>
                                 <input type="hidden" id="alta-mate-id">
                             </div>
                         </div>
-                        <div class="form-group mb-3">
+                        <div class="form-group">
                             <label class="form-label">Cantidad</label>
-                            <input type="number" id="alta-qty" class="form-control" min="1" placeholder="0">
+                            <input type="number" id="alta-qty" class="form-control" placeholder="0">
                         </div>
-                        <div class="form-group mb-3">
-                            <label class="form-label">Observaciones (Opcional)</label>
-                            <input type="text" id="alta-obs" class="form-control" placeholder="...">
-                        </div>
-                        <button class="btn btn-primary w-100" style="margin-top: 1rem;" onclick="registrarProduccion()">
-                            ⚡ Registrar Producción
-                        </button>
-                    </div>
-
-                    <!-- Actividad Reciente -->
-                    <div style="margin-top: 2rem; padding: 0.5rem; border-top: 1px dashed var(--border-color);">
-                        <div class="flex-between" style="margin-bottom: 0.5rem; align-items: center;">
-                            <h4 style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">REGISTROS RECIENTES</h4>
-                            <button class="btn-icon" onclick="fetchAltasRecientes()" title="Actualizar Registros">🔄</button>
-                        </div>
-                        <div id="alta-recent-list" class="text-sm" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
-                            <p class="text-muted text-center italic">Cargando registros...</p>
+                        <button class="btn btn-primary w-100" onclick="registrarProduccion()">⚡ Registrar Alta</button>
+                        
+                        <div class="recent-activity">
+                            <div class="flex-between">
+                                <h4>REGISTROS RECIENTES</h4>
+                                <button class="btn-icon" onclick="fetchAltasRecientes()">🔄</button>
+                            </div>
+                            <div id="alta-recent-list" class="mini-list"></div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Pendientes de Procesar -->
-                    <div style="margin-top: 1rem; padding: 0.5rem; border-top: 1px dashed var(--border-color);">
-                        <div class="flex-between" style="margin-bottom: 0.5rem; align-items: center;">
-                            <h4 style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">PENDIENTES (HOY)</h4>
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn btn-sm btn-outline" onclick="procesarAltasPendientes()" title="Procesar Remitos de Compra" style="font-size: 0.7rem; padding: 2px 6px;">🛠️ Procesar Todo</button>
-                                <button class="btn-icon" onclick="fetchAltasPendientes()" title="Actualizar Pendientes">🔄</button>
+            <!-- TAB 2: JAULAS (Gestión y Apertura) -->
+            <div id="view-jaulas" class="tab-pane">
+                <div class="col">
+                    <div class="col-header">
+                        <span>📦 Jaulas Abiertas</span>
+                        <button class="btn btn-primary btn-sm" onclick="crearNuevoRemito()">+ NUEVA</button>
+                    </div>
+                    <div class="col-body">
+                        <div id="remito-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: LLENADO (Acción de Carga) -->
+            <div id="view-llenado" class="tab-pane">
+                <div class="col">
+                    <div class="col-header">
+                        <span>📥 Llenado de Jaula</span>
+                    </div>
+                    <div class="col-body">
+                        <!-- Buscador de Stock -->
+                        <div class="form-group">
+                            <input type="text" id="search-stock" class="form-control" placeholder="🔍 Buscar para cargar..." oninput="filtrarStock()">
+                        </div>
+                        <div id="stock-list" class="stock-mini-grid"></div>
+
+                        <!-- Detalle de Carga -->
+                        <div id="detail-panel" class="detail-card" style="display:none;">
+                            <div id="remito-items" class="items-mini-list"></div>
+                            <div class="detail-actions">
+                                <button class="btn btn-success w-100" onclick="guardarItemsEnYiqi()">💾 GUARDAR EN YIQI</button>
                             </div>
                         </div>
-                        <div id="alta-pendientes-list" class="text-sm" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
-                            <p class="text-muted text-center italic">Cargando pendientes...</p>
+                        <div id="empty-state" class="empty-msg">
+                            <p>Seleccioná una jaula para cargar ítems.</p>
                         </div>
                     </div>
                 </div>
             </div>
+        </main>
 
-            <!-- COL 1: STOCK / JAULAS CERRADAS -->
-            <div class="col">
-                <div class="col-header">
-                    <span id="col-stock-title">🏭 Stock</span>
-                    <div style="display:flex; gap:0.25rem; align-items:center;">
-                        <button id="btn-fabrica" class="btn btn-sm btn-primary active"
-                            onclick="toggleStockView('FABRICA')">Fábrica</button>
-                        <button id="btn-revestimientos" class="btn btn-sm"
-                            onclick="toggleStockView('CERRADAS')">Jaulas Cerradas</button>
-                        <button class="btn-icon" onclick="refreshCurrentView()" title="Actualizar">🔄</button>
-                    </div>
-                </div>
-                <div style="padding: 0.5rem;">
-                    <input type="text" id="search-stock" class="form-control" placeholder="🔍 Buscar artículo..."
-                        oninput="filtrarStock()">
-                </div>
-                <div class="col-body" id="stock-list">
-                    <p class="text-muted text-center" style="padding:1rem;">Cargando stock...</p>
-                </div>
-            </div>
-
-            <!-- COL 2: JAULAS -->
-            <div class="col">
-                <div class="col-header">
-                    <span>📦 Jaulas</span>
-                    <div style="display:flex; gap:0.25rem; align-items:center;">
-                        <button class="btn btn-primary btn-sm" onclick="crearNuevoRemito()">+ Nueva</button>
-                        <button class="btn-icon" onclick="fetchActiveRemitos()" title="Actualizar Jaulas">🔄</button>
-                    </div>
-                </div>
-                <div class="col-body" id="remito-list">
-                    <!-- Remitos populated via JS -->
-                </div>
-            </div>
-
-            <!-- COL 3: DETALLE ACTIVO -->
-            <div class="col">
-                <div class="col-header">
-                    <span>📝 Detalle de Jaula</span>
-                    <div id="active-jaula-badge" class="badge-jaula" style="display:none;">Jaula N° ...</div>
-                    <div>
-                        <span id="active-remito-id" class="badge bg-blue" style="display:none;">#000</span>
-                    </div>
-                </div>
-
-                <div id="detail-panel" style="display:none; flex-direction:column; height:100%;">
-                    <div class="col-body" id="remito-items">
-                        <!-- Items added to Remito -->
-                    </div>
-
-                    <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: #f8fafc;">
-                        <div class="flex-between" style="margin-bottom: 0.5rem;">
-                            <strong>Total Items:</strong>
-                            <span id="total-items">0</span>
-                        </div>
-                        <div id="remito-actions">
-                            <button class="btn btn-success" style="width:100%;" onclick="guardarItemsEnYiqi()">💾
-                                Guardar Items en YiQi</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="empty-state"
-                    style="flex:1; display:flex; justify-content:center; align-items:center; color:var(--text-muted);">
-                    <p>Selecciona o crea una jaula para ver detalles.</p>
-                </div>
-            </div>
-        </div>
+        <!-- BOTTOM NAVIGATION -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('fabrica')" id="nav-fabrica">
+                <span class="nav-icon">🏗️</span>
+                <span class="nav-label">Fábrica</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('jaulas')" id="nav-jaulas">
+                <span class="nav-icon">📦</span>
+                <span class="nav-label">Jaulas</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('llenado')" id="nav-llenado">
+                <span class="nav-icon">📥</span>
+                <span class="nav-label">Llenado</span>
+            </button>
+        </nav>
+    </div>
     </div>
 
     <div id="loading-overlay">
