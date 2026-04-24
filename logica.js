@@ -1282,14 +1282,6 @@ async function setActiveRemito(remito) {
     activeRemitoItems = [];
     activeRemito.serverItems = [];
 
-    let jaulaText = "Jaula N° --";
-    if (remito.obs && remito.obs.includes("Jaula N°")) {
-        const match = remito.obs.match(/Jaula N°\s*\d+/);
-        if (match) jaulaText = match[0];
-    } else if (remito.obs) {
-        jaulaText = remito.obs;
-    }
-
     const displayNum = (remito.nroComprobante && remito.nroComprobante !== "S/N" && remito.nroComprobante !== "undefined") ? remito.nroComprobante : `ID: ${remito.id}`;
     
     // Actualizar el "Globito" de jaula activa en el header
@@ -1307,24 +1299,7 @@ async function setActiveRemito(remito) {
     const emptyState = document.getElementById('empty-state');
     if (emptyState) emptyState.style.display = 'none';
 
-    renderRemitoItems();
-}
-        badge.innerText = jaulaText;
-        badge.style.display = 'block';
-    }
-
-    document.getElementById('detail-panel').style.display = 'flex';
-    document.getElementById('empty-state').style.display = 'none';
-
-    renderRemitos();
     renderActiveRemitoItems();
-    renderStock();
-
-    document.getElementById('remito-items').innerHTML = `
-        <div class="text-center p-4">
-            <div class="text-muted mt-2">Cargando items...</div>
-        </div>
-    `;
     fetchRemitoItems(remito.id);
 }
 
