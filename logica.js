@@ -820,11 +820,7 @@ async function init() {
         yiqiToken = await YiQi.getToken();
 
         if (yiqiToken) {
-            const statusEl = document.getElementById('status-indicator');
-            if (statusEl) {
-                statusEl.className = "status-dot green";
-                statusEl.title = "Conectado";
-            }
+            console.log('✅ Conectado a YiQi');
             
             // Initialize sequential remito counter (prompts on first use)
             await initRemitoSeq();
@@ -1006,14 +1002,14 @@ function toggleStockView(view) {
     currentStockView = view;
 
     if (view === 'FABRICA') {
-        btnFab.classList.add('active', 'btn-primary');
-        btnRev.classList.remove('active', 'btn-primary');
+        if (btnFab) btnFab.classList.add('active', 'btn-primary');
+        if (btnRev) btnRev.classList.remove('active', 'btn-primary');
         if (title) title.textContent = '🏭 Stock';
         if (searchInput) searchInput.placeholder = '🔍 Buscar artículo...';
         fetchStock();
     } else {
-        btnRev.classList.add('active', 'btn-primary');
-        btnFab.classList.remove('active', 'btn-primary');
+        if (btnRev) btnRev.classList.add('active', 'btn-primary');
+        if (btnFab) btnFab.classList.remove('active', 'btn-primary');
         if (title) title.textContent = '📦 Jaulas Cerradas';
         if (searchInput) searchInput.placeholder = '🔍 Buscar jaula...';
         fetchClosedCages();
@@ -1260,6 +1256,19 @@ function clearActiveRemito() {
         jaulaBadge.style.display = 'none';
     }
 
+    // Ocultar globito del header
+    const bubble = document.getElementById('active-cage-bubble');
+    if (bubble) bubble.style.display = 'none';
+
+    // Ocultar indicador de llenado
+    const llenadoIndicator = document.getElementById('llenado-indicator');
+    if (llenadoIndicator) llenadoIndicator.classList.remove('visible');
+    const llenadoNum = document.getElementById('llenado-jaula-num');
+    if (llenadoNum) {
+        llenadoNum.innerText = 'Sin jaula';
+        llenadoNum.style.color = '';
+    }
+
     // Resetear paneles
     const detailPanel = document.getElementById('detail-panel');
     if (detailPanel) detailPanel.style.display = 'none';
@@ -1287,8 +1296,20 @@ async function setActiveRemito(remito) {
     // Actualizar el "Globito" de jaula activa en el header
     const bubble = document.getElementById('active-cage-bubble');
     if (bubble) {
-        bubble.innerText = `📦 #${displayNum}`;
+        bubble.innerText = `📦 Jaula #${displayNum}`;
         bubble.style.display = 'block';
+    }
+
+    // Actualizar indicador de jaula en la solapa Llenado
+    const llenadoIndicator = document.getElementById('llenado-indicator');
+    if (llenadoIndicator) {
+        llenadoIndicator.innerText = `📦 Cargando en: Jaula #${displayNum}`;
+        llenadoIndicator.classList.add('visible');
+    }
+    const llenadoNum = document.getElementById('llenado-jaula-num');
+    if (llenadoNum) {
+        llenadoNum.innerText = `Jaula #${displayNum}`;
+        llenadoNum.style.color = 'var(--success)';
     }
 
     // SALTO AUTOMÁTICO A LLENADO
@@ -1356,7 +1377,8 @@ function renderActiveRemitoItems() {
     list.innerHTML = html;
 
     const total = (activeRemitoItems.length) + (activeRemito.serverItems ? activeRemito.serverItems.length : 0);
-    document.getElementById('total-items').innerText = total;
+    const totalEl = document.getElementById('total-items');
+    if (totalEl) totalEl.innerText = total;
 
     const footer = document.getElementById('remito-actions');
     if (footer) {
@@ -2022,6 +2044,7 @@ async function fetchAltasPendientes() {
 
 function renderAltasPendientes() {
     const list = document.getElementById('alta-pendientes-list');
+    if (!list) return; // Element not in DOM (mobile tab layout)
     if (pendientesAltas.length === 0) {
         list.innerHTML = '<p class="text-muted text-center italic">Sin pendientes</p>';
         return;
@@ -2119,7 +2142,7 @@ function updateStatus(msg) {
     if (el) el.title = msg;
     
     const overlay = document.getElementById('loading-overlay');
-    if (overlay && overlay.style.display === 'flex') {
+    if (overlay && overlay.classList.contains('active')) {
         const p = overlay.querySelector('p');
         if (p) p.innerHTML = `<span style="font-size:1.1rem;">${msg}</span>
                               <div style="width:100%; height:4px; border-radius:2px; background:#e2e8f0; margin-top:10px; overflow:hidden;">
@@ -2133,10 +2156,12 @@ function updateStatus(msg) {
 function showLoading(show, defaultMessage = "Procesando...") {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        overlay.style.display = show ? 'flex' : 'none';
         if (show) {
+            overlay.classList.add('active');
             const p = overlay.querySelector('p');
             if (p) p.innerText = defaultMessage;
+        } else {
+            overlay.classList.remove('active');
         }
     }
 }

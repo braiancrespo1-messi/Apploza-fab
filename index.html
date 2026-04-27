@@ -3,17 +3,19 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Fábrica - Latas Enlozadas | TMC</title>
     <link rel="stylesheet" href="estilos.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
     <div class="app-container">
+        <!-- HEADER COMPACTO -->
         <header class="compact-header">
             <div class="header-left">
                 <img src="logo_tmc.png" alt="TMC">
@@ -24,8 +26,10 @@
             </div>
         </header>
 
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="main-content">
-            <!-- TAB 1: FABRICA (Alta Producción) -->
+
+            <!-- TAB 1: FABRICA -->
             <div id="view-fabrica" class="tab-pane active">
                 <div class="col">
                     <div class="col-header"><span>🏗️ Alta Producción</span></div>
@@ -40,7 +44,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Cantidad</label>
-                            <input type="number" id="alta-qty" class="form-control" placeholder="0">
+                            <input type="number" id="alta-qty" class="form-control" placeholder="0" inputmode="numeric">
                         </div>
                         <button class="btn btn-primary w-100" onclick="registrarProduccion()">⚡ Registrar Alta</button>
                         
@@ -51,11 +55,22 @@
                             </div>
                             <div id="alta-recent-list" class="mini-list"></div>
                         </div>
+
+                        <div class="recent-activity" style="border-top: 1px solid #fed7aa; background: #fffaf0; margin: 10px -10px -10px -10px; padding: 10px;">
+                            <div class="flex-between">
+                                <h4 style="color: #c2410c;">⚠️ ALTAS PENDIENTES</h4>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn-icon" onclick="fetchAltasPendientes()" title="Refrescar Pendientes">🔄</button>
+                                    <button class="btn-icon" onclick="procesarAltasPendientes()" title="Procesar Todo Manualmente" style="background: #ffedd5; border-radius: 4px;">⚡</button>
+                                </div>
+                            </div>
+                            <div id="alta-pendientes-list" class="mini-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: JAULAS (Gestión y Apertura) -->
+            <!-- TAB 2: JAULAS -->
             <div id="view-jaulas" class="tab-pane">
                 <div class="col">
                     <div class="col-header">
@@ -68,15 +83,20 @@
                 </div>
             </div>
 
-            <!-- TAB 3: LLENADO (Acción de Carga) -->
+            <!-- TAB 3: LLENADO -->
             <div id="view-llenado" class="tab-pane">
                 <div class="col">
                     <div class="col-header">
-                        <span>📥 Llenado de Jaula</span>
+                        <span>📥 Llenado</span>
+                        <span id="llenado-jaula-num" style="font-size:0.75rem; color:var(--text-muted);">Sin jaula</span>
+                    </div>
+                    <!-- Indicador grande de qué jaula estás llenando -->
+                    <div id="llenado-indicator" class="jaula-indicator">
+                        📦 Cargando en: Jaula #...
                     </div>
                     <div class="col-body">
                         <!-- Buscador de Stock -->
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:6px;">
                             <input type="text" id="search-stock" class="form-control" placeholder="🔍 Buscar para cargar..." oninput="filtrarStock()">
                         </div>
                         <div id="stock-list" class="stock-mini-grid"></div>
@@ -89,11 +109,12 @@
                             </div>
                         </div>
                         <div id="empty-state" class="empty-msg">
-                            <p>Seleccioná una jaula para cargar ítems.</p>
+                            <p>Seleccioná una jaula en la solapa 📦 para cargar ítems.</p>
                         </div>
                     </div>
                 </div>
             </div>
+
         </main>
 
         <!-- BOTTOM NAVIGATION -->
@@ -113,6 +134,7 @@
         </nav>
     </div>
 
+    <!-- LOADING OVERLAY (hidden by default) -->
     <div id="loading-overlay">
         <div style="text-align:center;">
             <div style="font-size: 2rem;">⏳</div>
@@ -120,19 +142,19 @@
         </div>
     </div>
 
-    <!-- Custom Modal Structure -->
+    <!-- MODAL -->
     <div id="custom-modal" class="modal-overlay">
         <div class="modal-box">
             <span id="modal-icon" class="modal-icon">✨</span>
             <div id="modal-title" class="modal-title">Título</div>
             <div id="modal-message" class="modal-message">Mensaje aquí</div>
-            <div id="modal-actions" class="modal-actions">
-                <!-- Buttons injected via JS -->
-            </div>
+            <div id="modal-actions" class="modal-actions"></div>
         </div>
     </div>
 
-    <div id="app-footer">Esperando acciones...</div>
+    <!-- Footer oculto (usado internamente por JS) -->
+    <div id="app-footer"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script src="logica.js"></script>
 </body>
