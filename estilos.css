@@ -95,6 +95,15 @@ html, body {
     50% { transform: scale(1.06); }
 }
 
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.pulse-warning {
+    animation: pulse-warning 1.5s infinite;
+}
+
 /* ========================================
    MAIN CONTENT: Zona scrolleable interna
    ======================================== */
