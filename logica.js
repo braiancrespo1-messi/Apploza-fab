@@ -1790,24 +1790,7 @@ async function fetchGroupsAndArticles() {
                 enlozadasArticles = allArticles.filter(a => String(a.MATE_GRUPO_IDEN || a.GRMA_ID) === String(enlozadasGroupId));
             }
             
-            // Poblar el menú desplegable (Select)
-            const select = document.getElementById('alta-mate-id');
-            if (select) {
-                const sorted = enlozadasArticles.sort((a,b) => {
-                    const skuA = (a.CODIGO || a.MATE_CODIGO || "");
-                    const skuB = (b.CODIGO || b.MATE_CODIGO || "");
-                    return skuA.localeCompare(skuB);
-                });
-                
-                select.innerHTML = '<option value="">Seleccione artículo...</option>' + 
-                    sorted.map(a => {
-                        const id = a.ID || a.MATE_ID_MATE;
-                        const code = a.CODIGO || a.MATE_CODIGO || "S/C";
-                        const name = a.NOMBRE || a.MATE_NOMBRE || "S/N";
-                        return `<option value="${id}">${code} - ${name}</option>`;
-                    }).join('');
-            }
-
+            // Los artículos quedan cargados en enlozadasArticles para el Selector Premium
             console.log(`📦 Loaded ${enlozadasArticles.length} Articles for Alta (Group ${enlozadasGroupId})`);
         }
     } catch (e) {
@@ -1815,16 +1798,78 @@ async function fetchGroupsAndArticles() {
     }
 }
 
+// ========================================
+// PREMIUM SKU SELECTOR (Mobile Optimized)
+// ========================================
+function openSkuSelector() {
+    const overlay = document.getElementById('sku-selector-overlay');
+    const searchInput = document.getElementById('sku-selector-search');
+    if (overlay) {
+        overlay.classList.add('active');
+        if (searchInput) {
+            searchInput.value = "";
+            setTimeout(() => searchInput.focus(), 300);
+        }
+        renderSkuSelectorList();
+    }
+}
+
+function closeSkuSelector() {
+    const overlay = document.getElementById('sku-selector-overlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function filterSkuSelector() {
+    renderSkuSelectorList();
+}
+
+function renderSkuSelectorList() {
+    const list = document.getElementById('sku-selector-list');
+    const query = (document.getElementById('sku-selector-search')?.value || "").toLowerCase().trim();
+    if (!list) return;
+
+    let filtered = enlozadasArticles;
+    if (query.length > 0) {
+        filtered = enlozadasArticles.filter(a => {
+            const code = (a.CODIGO || a.MATE_CODIGO || "").toLowerCase();
+            const name = (a.NOMBRE || a.MATE_NOMBRE || "").toLowerCase();
+            return code.includes(query) || name.includes(query);
+        });
+    }
+
+    // Sort by SKU
+    filtered.sort((a,b) => (a.CODIGO || a.MATE_CODIGO || "").localeCompare(b.CODIGO || b.MATE_CODIGO || ""));
+
+    list.innerHTML = filtered.map(a => {
+        const id = a.ID || a.MATE_ID_MATE;
+        const code = a.CODIGO || a.MATE_CODIGO || "S/C";
+        const name = a.NOMBRE || a.MATE_NOMBRE || "Sin Nombre";
+        return `
+            <div class="sku-item-card" onclick="selectSkuItem('${id}', '${code}', '${name.replace(/'/g, "\\'")}')">
+                <b>${code}</b>
+                <span>${name}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectSkuItem(id, code, name) {
+    document.getElementById('alta-mate-id').value = id;
+    document.getElementById('selected-sku-text').innerText = `${code} - ${name}`;
+    document.getElementById('sku-selector-trigger').style.borderColor = "var(--primary-color)";
+    closeSkuSelector();
+}
+
 
 
 async function registrarProduccion() {
-    const select = document.getElementById('alta-mate-id');
-    const mateId = select ? select.value : "";
-    const sku = select && select.selectedIndex > 0 ? select.options[select.selectedIndex].text.split(' - ')[0] : "";
+    const mateId = document.getElementById('alta-mate-id').value;
+    const skuText = document.getElementById('selected-sku-text').innerText;
+    const sku = skuText.split(' - ')[0];
     const qty = document.getElementById('alta-qty').value;
     const obs = document.getElementById('alta-obs').value || "";
 
-    if (!mateId || !qty || qty <= 0) {
+    if (!mateId || mateId === "" || !qty || qty <= 0) {
         await showModal("Datos Incompletos", "Por favor selecciona un artículo y especifica una cantidad válida.", "warning");
         return;
     }
@@ -1847,6 +1892,7 @@ async function registrarProduccion() {
 
         // Mapeo: 12369=Grupo, 12370=Articulo, 12371=Cantidad, 12372=Obs
         const formStr = `12369=${enlozadasGroupId}&12370=${mateId}&12371=${qty}&12372=${encodeURIComponent(obs)}`;
+        console.log("🚀 Payload Form:", formStr);
 
         const payload = {
             schemaId: YIQI_CONFIG.schemaId,
@@ -1875,6 +1921,8 @@ async function registrarProduccion() {
 
             // Limpiar formulario
             document.getElementById('alta-mate-id').value = "";
+            document.getElementById('selected-sku-text').innerText = "Seleccione artículo...";
+            document.getElementById('sku-selector-trigger').style.borderColor = "#cbd5e1";
             document.getElementById('alta-qty').value = "";
             document.getElementById('alta-obs').value = "";
 
