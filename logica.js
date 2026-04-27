@@ -1789,6 +1789,25 @@ async function fetchGroupsAndArticles() {
                 console.warn("⚠️ Filtro SEMI ELABORADO no devolvió resultados. Cargando todo el Grupo 93.");
                 enlozadasArticles = allArticles.filter(a => String(a.MATE_GRUPO_IDEN || a.GRMA_ID) === String(enlozadasGroupId));
             }
+            
+            // Poblar el menú desplegable (Select)
+            const select = document.getElementById('alta-mate-id');
+            if (select) {
+                const sorted = enlozadasArticles.sort((a,b) => {
+                    const skuA = (a.CODIGO || a.MATE_CODIGO || "");
+                    const skuB = (b.CODIGO || b.MATE_CODIGO || "");
+                    return skuA.localeCompare(skuB);
+                });
+                
+                select.innerHTML = '<option value="">Seleccione artículo...</option>' + 
+                    sorted.map(a => {
+                        const id = a.ID || a.MATE_ID_MATE;
+                        const code = a.CODIGO || a.MATE_CODIGO || "S/C";
+                        const name = a.NOMBRE || a.MATE_NOMBRE || "S/N";
+                        return `<option value="${id}">${code} - ${name}</option>`;
+                    }).join('');
+            }
+
             console.log(`📦 Loaded ${enlozadasArticles.length} Articles for Alta (Group ${enlozadasGroupId})`);
         }
     } catch (e) {
@@ -1796,58 +1815,14 @@ async function fetchGroupsAndArticles() {
     }
 }
 
-function filterAltaArticles() {
-    const query = (document.getElementById('alta-sku-search').value || "").toLowerCase().trim();
-    const resultsContainer = document.getElementById('alta-sku-results');
 
-    let filtered = enlozadasArticles;
-    if (query.length > 0) {
-        filtered = enlozadasArticles.filter(a => {
-            const code = (a.CODIGO || a.MATE_CODIGO || a.STOC_SKU || a.Sku || "").toLowerCase();
-            const name = (a.NOMBRE || a.MATE_NOMBRE || a.MATE_DESCRIPCION || a.Nombre || "").toLowerCase();
-            return code.includes(query) || name.includes(query);
-        });
-    }
-
-    filtered = filtered.slice(0, 300);
-
-    if (filtered.length > 0) {
-        resultsContainer.innerHTML = filtered.map(a => {
-            const id = a.ID || a.MATE_ID_MATE || a.Id;
-            const code = a.CODIGO || a.MATE_CODIGO || a.STOC_SKU || a.Sku || "S/C";
-            const name = a.NOMBRE || a.MATE_NOMBRE || a.MATE_DESCRIPCION || a.Nombre || "Sin Nombre";
-            const safeName = name.replace(/'/g, "\\'");
-            return `
-                <div class="search-result-item" onclick="selectAltaArticle('${id}', '${code}', '${safeName}')">
-                    <b>${code}</b> - ${name}
-                </div>
-            `;
-        }).join('');
-        resultsContainer.style.display = 'block';
-    } else {
-        resultsContainer.innerHTML = '<div class="p-2 text-muted text-sm">No se encontraron artículos</div>';
-        resultsContainer.style.display = 'block';
-    }
-}
-
-document.addEventListener('click', function (e) {
-    const searchWrapper = document.querySelector('.dropdown-wrapper');
-    const results = document.getElementById('alta-sku-results');
-    if (searchWrapper && results && !searchWrapper.contains(e.target)) {
-        results.style.display = 'none';
-    }
-});
-
-function selectAltaArticle(id, code, name) {
-    document.getElementById('alta-mate-id').value = id;
-    document.getElementById('alta-sku-search').value = code;
-    document.getElementById('alta-sku-results').style.display = 'none';
-}
 
 async function registrarProduccion() {
-    const mateId = document.getElementById('alta-mate-id').value;
-    const sku = document.getElementById('alta-sku-search').value;
+    const select = document.getElementById('alta-mate-id');
+    const mateId = select ? select.value : "";
+    const sku = select && select.selectedIndex > 0 ? select.options[select.selectedIndex].text.split(' - ')[0] : "";
     const qty = document.getElementById('alta-qty').value;
+    const obs = document.getElementById('alta-obs').value || "";
 
     if (!mateId || !qty || qty <= 0) {
         await showModal("Datos Incompletos", "Por favor selecciona un artículo y especifica una cantidad válida.", "warning");
@@ -1870,7 +1845,8 @@ async function registrarProduccion() {
         const initialRemitos = await YiQi.fetch(2698, 787);
         const existingIds = (initialRemitos || []).map(r => String(r.ID || r.id));
 
-        const formStr = `12369=${enlozadasGroupId}&12370=${mateId}&12371=${qty}&12372=Fábrica`;
+        // Mapeo: 12369=Grupo, 12370=Articulo, 12371=Cantidad, 12372=Obs
+        const formStr = `12369=${enlozadasGroupId}&12370=${mateId}&12371=${qty}&12372=${encodeURIComponent(obs)}`;
 
         const payload = {
             schemaId: YIQI_CONFIG.schemaId,
@@ -1897,9 +1873,10 @@ async function registrarProduccion() {
             recentAltas.unshift({ sku, qty, time: new Date().toLocaleTimeString(), id: newId });
             renderRecentAltas();
 
+            // Limpiar formulario
             document.getElementById('alta-mate-id').value = "";
-            document.getElementById('alta-sku-search').value = "";
             document.getElementById('alta-qty').value = "";
+            document.getElementById('alta-obs').value = "";
 
             // PROCESAMIENTO AUTOMATICO del remito de compra
             let matchingRemitoId = null;
