@@ -1364,7 +1364,7 @@ function renderActiveRemitoItems() {
     }
 
     if (activeRemito && activeRemito.serverItems && activeRemito.serverItems.length > 0) {
-        html += `<div class="text-sm text-muted" style="padding:0.5rem; border-bottom:1px solid #eee; margin-top:0.5rem;">Guardados en YiQi:</div>`;
+        html += `<div class="text-sm text-muted" style="padding:0.5rem; border-bottom:1px solid #eee; margin-top:0.5rem;">Guardados en Jaula:</div>`;
         html += activeRemito.serverItems.map(item => {
             const sku = item.MATE_CODIGO || item.CODIGO || "";
             const name = item.MATE_NOMBRE || item.DERI_NOMBRE_ARTICULO || item.NOMBRE || "";
