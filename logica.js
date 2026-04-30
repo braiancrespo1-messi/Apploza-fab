@@ -1291,24 +1291,25 @@ async function setActiveRemito(remito) {
     activeRemitoItems = [];
     activeRemito.serverItems = [];
 
-    const displayNum = (remito.nroComprobante && remito.nroComprobante !== "S/N" && remito.nroComprobante !== "undefined") ? remito.nroComprobante : `ID: ${remito.id}`;
-    
+    const jaulaNumDisplay = remito.obs || `ID: ${remito.id}`;
+    const remitoExtDisplay = remito.nroRemitoExterno || remito.remitoExtNum ? ` - Remito N° ${remito.nroRemitoExterno || remito.remitoExtNum}` : '';
+
     // Actualizar el "Globito" de jaula activa en el header
     const bubble = document.getElementById('active-cage-bubble');
     if (bubble) {
-        bubble.innerText = `📦 Jaula #${displayNum}`;
+        bubble.innerText = `📦 ${jaulaNumDisplay}${remitoExtDisplay}`;
         bubble.style.display = 'block';
     }
 
     // Actualizar indicador de jaula en la solapa Llenado
     const llenadoIndicator = document.getElementById('llenado-indicator');
     if (llenadoIndicator) {
-        llenadoIndicator.innerText = `📦 Cargando en: Jaula #${displayNum}`;
+        llenadoIndicator.innerText = `📦 Cargando en: ${jaulaNumDisplay}${remitoExtDisplay}`;
         llenadoIndicator.classList.add('visible');
     }
     const llenadoNum = document.getElementById('llenado-jaula-num');
     if (llenadoNum) {
-        llenadoNum.innerText = `Jaula #${displayNum}`;
+        llenadoNum.innerText = `${jaulaNumDisplay}${remitoExtDisplay}`;
         llenadoNum.style.color = 'var(--success)';
     }
 
@@ -1389,7 +1390,7 @@ function renderActiveRemitoItems() {
             footer.innerHTML = `
                 <div style="display:flex; gap:10px; justify-content: flex-end; flex-wrap: wrap;">
                      ${hasPendingItems ? `<button class="btn btn-primary" onclick="guardarItemsEnYiqi()">💾 Guardar Pendientes</button>` : ''}
-                     ${hasSavedItems ? `<button class="btn btn-success" onclick="cerrarJaula()">🔒 Cerrar Jaula</button>` : ''}
+                     ${hasSavedItems ? `<button class="btn btn-success" onclick="cerrarJaula()">🖨️ Rotular Jaula</button>` : ''}
                 </div>
             `;
         } else {
