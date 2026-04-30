@@ -880,6 +880,7 @@ async function fetchActiveRemitos() {
                     id: r.ID || r.id,
                     nroComprobante: nro || "S/N",
                     obs: r.REIN_OBSERVACION || "",
+                    nroRemitoExterno: r.REIN_NRO_EXTERNO || r['13096'] || "",
                     status: 'OPEN',
                     yiqiData: r
                 };
@@ -1222,13 +1223,16 @@ async function crearNuevoRemito() {
 function renderRemitos() {
     const list = document.getElementById('remito-list');
     list.innerHTML = remitos.map(r => `
-        <div class="remito-card ${activeRemito && activeRemito.id === r.id ? 'active' : ''}" onclick="selectRemito(${r.id})">
-            <div class="flex-between">
-                <strong style="font-size:1.1rem;">${r.obs || "Jaula"}</strong>
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <span class="badge bg-green">ABIERTO</span>
-                    <button class="btn btn-sm btn-danger" onclick="cancelarRemito(event, ${r.id})" title="Cancelar Remito" style="padding: 2px 6px; font-size: 0.8rem;">✕</button>
-                </div>
+        <div class="remito-card ${activeRemito && activeRemito.id === r.id ? 'active' : ''}" onclick="selectRemito(${r.id})" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="flex: 1; min-width: 0;">
+                <strong style="font-size:1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${r.obs || "Jaula"}</strong>
+            </div>
+            <div style="flex: 1; text-align: center; color: #94a3b8; font-weight: 700; font-size: 0.9rem;">
+                ${r.nroRemitoExterno ? 'R: ' + r.nroRemitoExterno : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; justify-content: flex-end; flex: 1;">
+                <span class="badge bg-green">ABIERTO</span>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); cancelarRemito(event, ${r.id})" title="Cancelar Remito" style="padding: 2px 8px; font-size: 0.8rem; z-index: 2;">✕</button>
             </div>
         </div>
     `).join('');
@@ -1291,26 +1295,31 @@ async function setActiveRemito(remito) {
     activeRemitoItems = [];
     activeRemito.serverItems = [];
 
-    const jaulaNumDisplay = remito.obs || `ID: ${remito.id}`;
-    const remitoExtDisplay = remito.nroRemitoExterno || remito.remitoExtNum ? ` - Remito N° ${remito.nroRemitoExterno || remito.remitoExtNum}` : '';
+    let obsText = remito.obs || String(remito.id);
+    if (!obsText.toLowerCase().includes("jaula")) {
+        obsText = `Jaula N° ${obsText}`;
+    }
+
+    const extNum = remito.nroRemitoExterno || remito.remitoExtNum || (remito.yiqiData ? (remito.yiqiData.REIN_NRO_EXTERNO || remito.yiqiData['13096']) : null) || "";
+    const remitoExtDisplay = extNum ? `R: ${extNum}` : '';
 
     // Actualizar el "Globito" de jaula activa en el header
     const bubble = document.getElementById('active-cage-bubble');
     if (bubble) {
-        bubble.innerText = `📦 ${jaulaNumDisplay}${remitoExtDisplay}`;
+        bubble.innerText = `📦 ${obsText}`;
         bubble.style.display = 'block';
     }
 
     // Actualizar indicador de jaula en la solapa Llenado
     const llenadoIndicator = document.getElementById('llenado-indicator');
     if (llenadoIndicator) {
-        llenadoIndicator.innerText = `📦 Cargando en: ${jaulaNumDisplay}${remitoExtDisplay}`;
+        llenadoIndicator.innerText = `📦 Cargando en: ${obsText}`;
         llenadoIndicator.classList.add('visible');
     }
     const llenadoNum = document.getElementById('llenado-jaula-num');
     if (llenadoNum) {
-        llenadoNum.innerText = `${jaulaNumDisplay}${remitoExtDisplay}`;
-        llenadoNum.style.color = 'var(--success)';
+        llenadoNum.innerText = remitoExtDisplay;
+        llenadoNum.style.color = 'var(--text-muted)';
     }
 
     // SALTO AUTOMÁTICO A LLENADO
