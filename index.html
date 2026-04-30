@@ -77,12 +77,20 @@
             <!-- TAB 2: JAULAS -->
             <div id="view-jaulas" class="tab-pane">
                 <div class="col">
-                    <div class="col-header">
-                        <span>📦 Jaulas Abiertas</span>
-                        <button class="btn btn-primary btn-sm" onclick="crearNuevoRemito()">+ NUEVA</button>
+                    <div class="col-header" style="flex-direction: column; align-items: stretch; gap: 10px; padding-bottom: 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span id="jaulas-view-title">📦 Jaulas Abiertas</span>
+                            <button id="btn-nueva-jaula" class="btn btn-primary btn-sm" onclick="crearNuevoRemito()">+ NUEVA</button>
+                            <button id="btn-refresh-jaulas-cerradas" class="btn btn-primary btn-sm" onclick="fetchClosedCages()" style="display: none;">🔄 Actualizar</button>
+                        </div>
+                        <div style="display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px;">
+                            <button id="btn-tab-abiertas" class="btn btn-sm" style="flex:1; background: white; color: var(--primary-color); box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="setJaulasView('OPEN')">Abiertas</button>
+                            <button id="btn-tab-cerradas" class="btn btn-sm" style="flex:1; background: transparent; color: #64748b; box-shadow: none;" onclick="setJaulasView('CLOSED')">Cerradas</button>
+                        </div>
                     </div>
                     <div class="col-body">
                         <div id="remito-list"></div>
+                        <div id="closed-cages-list" style="display:none;"></div>
                     </div>
                 </div>
             </div>

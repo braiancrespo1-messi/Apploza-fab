@@ -9,7 +9,7 @@ const YIQI_CONFIG = {
     entityId: 794,          // Stock View
     smartieId: 2749,        // Stock Factory Smartie
     smartieRevestimientos: 2750, // Stock Jaulas Cerradas Smartie (legacy, unused now)
-    smartieJaulasCerradas: 2735, // Jaulas Armadas/Cerradas (Entity 781)
+    smartieJaulasCerradas: 2753, // Jaulas Armadas/Cerradas (Entity 781)
     smartieRemitosActivos: 2737, // Active Remitos Smartie (Entity 781)
     entityRemito: 781,      // Remito Interno Entity
     childRemitoId: 227,     // Remito Interno Items Child ID
@@ -1017,6 +1017,36 @@ function toggleStockView(view) {
     }
 }
 
+function setJaulasView(view) {
+    const btnAbiertas = document.getElementById('btn-tab-abiertas');
+    const btnCerradas = document.getElementById('btn-tab-cerradas');
+    const listAbiertas = document.getElementById('remito-list');
+    const listCerradas = document.getElementById('closed-cages-list');
+    const btnNueva = document.getElementById('btn-nueva-jaula');
+    const btnRefreshCerradas = document.getElementById('btn-refresh-jaulas-cerradas');
+    const title = document.getElementById('jaulas-view-title');
+
+    if (view === 'OPEN') {
+        if (btnAbiertas) { btnAbiertas.style.background = 'white'; btnAbiertas.style.color = 'var(--primary-color)'; btnAbiertas.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
+        if (btnCerradas) { btnCerradas.style.background = 'transparent'; btnCerradas.style.color = '#64748b'; btnCerradas.style.boxShadow = 'none'; }
+        if (listAbiertas) listAbiertas.style.display = 'block';
+        if (listCerradas) listCerradas.style.display = 'none';
+        if (btnNueva) btnNueva.style.display = 'block';
+        if (btnRefreshCerradas) btnRefreshCerradas.style.display = 'none';
+        if (title) title.innerText = '📦 Jaulas Abiertas';
+        fetchActiveRemitos();
+    } else {
+        if (btnCerradas) { btnCerradas.style.background = 'white'; btnCerradas.style.color = 'var(--primary-color)'; btnCerradas.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; }
+        if (btnAbiertas) { btnAbiertas.style.background = 'transparent'; btnAbiertas.style.color = '#64748b'; btnAbiertas.style.boxShadow = 'none'; }
+        if (listAbiertas) listAbiertas.style.display = 'none';
+        if (listCerradas) listCerradas.style.display = 'block';
+        if (btnNueva) btnNueva.style.display = 'none';
+        if (btnRefreshCerradas) btnRefreshCerradas.style.display = 'block';
+        if (title) title.innerText = '📦 Jaulas Cerradas';
+        fetchClosedCages();
+    }
+}
+
 function refreshCurrentView() {
     if (currentStockView === 'CERRADAS') {
         fetchClosedCages();
@@ -1028,10 +1058,10 @@ function refreshCurrentView() {
 // --- JAULAS CERRADAS (Reprint Label) ---
 
 async function fetchClosedCages() {
-    const btnRefresh = document.querySelector('button[title="Actualizar"]');
+    const btnRefresh = document.getElementById('btn-refresh-jaulas-cerradas');
     if (btnRefresh) btnRefresh.classList.add('spin');
 
-    const list = document.getElementById('stock-list');
+    const list = document.getElementById('closed-cages-list');
     if (!list) return;
 
     list.innerHTML = `<p class="text-muted text-center" style="padding:1rem;">Cargando jaulas cerradas...</p>`;
@@ -1040,7 +1070,6 @@ async function fetchClosedCages() {
         const data = await YiQi.fetch(YIQI_CONFIG.smartieJaulasCerradas, YIQI_CONFIG.entityRemito);
         if (data) {
             closedCages = data.map(r => {
-                // Try to extract Nro Remito Externo (field 13096) from response
                 const remitoExt = r.REIN_NRO_EXTERNO || r.REIN_NRO_REMITO_EXTERNO || r.NRO_REMITO_EXTERNO || r.REMITO_EXTERNO || r['13096'] || "";
                 return {
                     id: r.ID || r.id,
@@ -1063,7 +1092,8 @@ async function fetchClosedCages() {
 }
 
 function renderClosedCages() {
-    const list = document.getElementById('stock-list');
+    const list = document.getElementById('closed-cages-list');
+    if (!list) return;
 
     if (closedCages.length === 0) {
         list.innerHTML = `<p class="text-muted text-center" style="padding:1rem;">No hay jaulas cerradas.</p>`;
@@ -1071,25 +1101,25 @@ function renderClosedCages() {
     }
 
     list.innerHTML = closedCages.map(cage => {
-        let jaulaNum = "?";
-        if (cage.obs && cage.obs.includes("Jaula N°")) {
-            const match = cage.obs.match(/Jaula N°\s*(\d+)/);
-            if (match) jaulaNum = match[1];
+        let obsText = cage.obs || String(cage.id);
+        if (!obsText.toLowerCase().includes("jaula")) {
+            obsText = `Jaula N° ${obsText}`;
         }
-
-        // Show Remito N° if available, fallback to YiQi ID
         const remitoExt = cage.nroRemitoExterno;
-        const idDisplay = remitoExt ? `Remito N° ${remitoExt}` : `ID: ${cage.id}`;
 
         return `
-        <div class="closed-cage-card" style="padding: 0.85rem; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.5rem; border-left: 4px solid var(--success); display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong style="font-size: 1.05rem;">${cage.obs || 'Jaula'}</strong>
-                <div class="text-sm" style="margin-top: 2px; color: ${remitoExt ? '#1d4ed8' : 'var(--text-muted)'}; font-weight: ${remitoExt ? '600' : '400'};">${idDisplay}</div>
+        <div class="remito-card" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: default;">
+            <div style="flex: 1; min-width: 0;">
+                <strong style="font-size:1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${obsText}</strong>
             </div>
-            <button class="btn btn-sm" onclick="reprintCageLabel(${cage.id})" style="background: #dbeafe; color: #1d4ed8; font-weight: 600; gap: 4px;">
-                🖨️ Rótulo
-            </button>
+            <div style="flex: 1; text-align: center; color: #94a3b8; font-weight: 700; font-size: 0.9rem;">
+                ${remitoExt ? 'R: ' + remitoExt : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; justify-content: flex-end; flex: 1;">
+                <button class="btn btn-sm" onclick="reprintCageLabel(${cage.id})" style="background: #dbeafe; color: #1d4ed8; font-weight: 600; padding: 4px 10px;">
+                    🖨️ Rótulo
+                </button>
+            </div>
         </div>
         `;
     }).join('');
