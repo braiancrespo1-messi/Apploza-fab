@@ -569,6 +569,14 @@ html, body {
 .bg-green { background: #dcfce7; color: #166534; }
 .bg-orange { background: #ffedd5; color: #9a3412; }
 
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+.spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
 /* Premium Select Styles */
 .premium-select {
     background: white;
